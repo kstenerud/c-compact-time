@@ -1,0 +1,4 @@
+[wrap-git]
+directory = vlq
+url = https://github.com/kstenerud/c-vlq.git
+revision = head

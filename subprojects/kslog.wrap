@@ -1,0 +1,4 @@
+[wrap-git]
+directory = kslog
+url = https://github.com/kstenerud/kslog.git
+revision = head

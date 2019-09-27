@@ -1,0 +1,4 @@
+[wrap-git]
+directory = endianness
+url = https://github.com/kstenerud/endianness.git
+revision = head
