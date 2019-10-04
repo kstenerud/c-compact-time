@@ -74,7 +74,7 @@ typedef struct
     union
     {
         ct_location as_location;
-        char as_string[128];
+        char as_string[41]; // Must be null-terminated!
     } data;
     ct_tz_type type;
 } ct_timezone;
