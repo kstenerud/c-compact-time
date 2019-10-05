@@ -53,6 +53,15 @@ static void fill_timezone_loc(ct_timezone* timezone, const int latitude, const i
     timezone->longitude = longitude;
 }
 
+#define ASSERT_TIMEZONE_EQ(ACTUAL, EXPECTED) \
+    ASSERT_EQ((EXPECTED).type, (ACTUAL).type); \
+    if((EXPECTED).type == CT_TZ_STRING) { \
+        ASSERT_STREQ((EXPECTED).as_string, (ACTUAL).as_string); \
+    } else if((EXPECTED).type == CT_TZ_LATLONG) { \
+        ASSERT_EQ((EXPECTED).latitude, (ACTUAL).latitude); \
+        ASSERT_EQ((EXPECTED).longitude, (ACTUAL).longitude); \
+    }
+
 #define ASSERT_DATE_EQ(ACTUAL, EXPECTED) \
     ASSERT_EQ(EXPECTED.year, ACTUAL.year); \
     ASSERT_EQ(EXPECTED.month, ACTUAL.month); \
@@ -62,7 +71,8 @@ static void fill_timezone_loc(ct_timezone* timezone, const int latitude, const i
     ASSERT_EQ(EXPECTED.hour, ACTUAL.hour); \
     ASSERT_EQ(EXPECTED.minute, ACTUAL.minute); \
     ASSERT_EQ(EXPECTED.second, ACTUAL.second); \
-    ASSERT_EQ(EXPECTED.nanosecond, ACTUAL.nanosecond)
+    ASSERT_EQ(EXPECTED.nanosecond, ACTUAL.nanosecond); \
+    ASSERT_TIMEZONE_EQ(EXPECTED.timezone, ACTUAL.timezone)
 
 #define ASSERT_DATE_ENCODE_DECODE(EXPECTED_DATE, ACTUAL_DATE, ...) \
     std::vector<uint8_t> expected = __VA_ARGS__; \
@@ -160,7 +170,7 @@ TEST(CDate, timestamp_named_ ## YEAR ## _ ## MONTH ## _ ## DAY ## _ ## HOUR ## _
 }
 
 #define TEST_TIMESTAMP_TZ_LOC(SIGN, YEAR, MONTH, DAY, HOUR, MINUTE, SECOND, NANOSECOND, LAT, LONG, ...) \
-TEST(CDate, timestamp_loc_ ## YEAR ## _ ## MONTH ## _ ## DAY ## _ ## HOUR ## _ ## MINUTE ## _ ## SECOND ## _ ## NANOSECOND ## _ ## LAT ## _ ## LONG) \
+TEST(CDate, timestamp_loc_ ## YEAR ## _ ## MONTH ## _ ## DAY ## _ ## HOUR ## _ ## MINUTE ## _ ## SECOND ## _ ## NANOSECOND) \
 { \
     ct_timestamp timestamp; \
     fill_timestamp(&timestamp, SIGN YEAR, MONTH, DAY, HOUR, MINUTE, SECOND, NANOSECOND); \
@@ -188,7 +198,7 @@ TEST_TIME_TZ_UTC(8, 41, 05, 999999999, {0x47, 0x69, 0xf1, 0x9f, 0xac, 0xb9, 0x03
 TEST_TIME_TZ_UTC(14, 18, 30, 43000000, {0x73, 0x92, 0xb7, 0x02})
 TEST_TIME_TZ_UTC(23, 6, 55, 8000, {0xbd, 0xc6, 0x8d, 0x00, 0x00})
 TEST_TIME_TZ_NAMED(10, 10, 10, 0, "S/Tokyo", {0x50, 0x8a, 0x02, 0x0e, 'S','/','T','o','k','y','o'})
-TEST_TIME_TZ_LOC(7, 45, 0, 1000000, 3876, -2730, {0x3a, 0x2d, 0x10, 0x00, 0x49, 0x1e, 0xab, 0x3a})
+TEST_TIME_TZ_LOC(7, 45, 0, 1000000, -3876, 2730, {0x3a, 0x2d, 0x10, 0x00, 0xb9, 0x61, 0x55, 0x05})
 
 
 
@@ -200,6 +210,8 @@ TEST_TIMESTAMP_TZ_NAMED( , 2000,1,1,0,0,0,0, "Europe/Berlin", {0x00, 0x00, 0x08,
 TEST_TIMESTAMP_TZ_NAMED( , 2020,8,30,15,33,14,19577323, "S/Singapore", {0x3b, 0xe1, 0xf3, 0xb8, 0x9e, 0xab, 0x12, 0x00, 0x50, 0x16, 'S', '/', 'S', 'i', 'n', 'g', 'a', 'p', 'o', 'r', 'e'})
 
 TEST_TIMESTAMP_TZ_LOC( , 2000,1,1,1,0,0,0,100,200, {0x00, 0x40, 0x08, 0x01, 0x00, 0xc9, 0x00, 0x64, 0x00})
+TEST_TIMESTAMP_TZ_LOC( , 2000,1,1,2,0,0,0,-100,-200, {0x00, 0x80, 0x08, 0x01, 0x00, 0x39, 0x7f, 0x9c, 0x3f})
+TEST_TIMESTAMP_TZ_LOC( , 1985, 10, 26, 1, 22, 16, 0, 3399, -11793, {0x40, 0x56, 0xd0, 0x0a, 0x3a, 0x8f, 0x9a, 0xf7, 0x28})
 
 TEST_TIMESTAMP_TZ_UTC( ,  2000,1,1,0,0,0,        0, {0x00, 0x00, 0x08, 0x01, 0x01})
 TEST_TIMESTAMP_TZ_UTC( ,  2000,1,1,1,0,0,        0, {0x00, 0x40, 0x08, 0x01, 0x01})

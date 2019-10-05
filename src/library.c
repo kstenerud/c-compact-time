@@ -107,6 +107,12 @@ static int zigzag_decode(const uint32_t value)
     return (value >> 1) ^ -(value & 1);
 }
 
+static int sign_extend(int value, int original_bit_size)
+{
+    const int shift_amount = sizeof(value)*8 - original_bit_size;
+    return (value << shift_amount) >> shift_amount;
+}
+
 static unsigned encode_year(const int year)
 {
     return zigzag_encode(year - YEAR_BIAS);
@@ -165,12 +171,15 @@ static int timezone_encoded_size(const ct_timezone* timezone)
 
 static int timezone_encode(const ct_timezone* timezone, uint8_t* dst, int dst_length)
 {
+    KSLOG_DEBUG("timezone_encode()");
     switch(timezone->type)
     {
         case CT_TZ_ZERO:
+            KSLOG_TRACE("TS Zero");
             return 0;
         case CT_TZ_STRING:
         {
+            KSLOG_TRACE("TS String %s", timezone->as_string);
             const int string_length = strlen(timezone->as_string);
             if(string_length + 1 > dst_length)
             {
@@ -182,11 +191,13 @@ static int timezone_encode(const ct_timezone* timezone, uint8_t* dst, int dst_le
         }
         case CT_TZ_LATLONG:
         {
+            KSLOG_TRACE("TS Lat/long %d/%d", timezone->latitude, timezone->longitude);
             uint32_t value = timezone->longitude & MASK_LONGITUDE;
             value <<= SIZE_LATITUDE;
             value |= timezone->latitude & MASK_LATITUDE;
             value <<= 1;
             value |= 1;
+            KSLOG_TRACE("Encoded as int: %x", value);
             int length = sizeof(value);
             if(length > dst_length)
             {
@@ -202,8 +213,10 @@ static int timezone_encode(const ct_timezone* timezone, uint8_t* dst, int dst_le
 
 static int timezone_decode(ct_timezone* timezone, const uint8_t* src, int src_length, bool timezone_is_utc)
 {
+    KSLOG_DATA_DEBUG(src, src_length, "timezone_decode(timezone_is_utc = %d)", timezone_is_utc);
     if(timezone_is_utc)
     {
+        KSLOG_TRACE("TS Zero");
         timezone->type = CT_TZ_ZERO;
         return 0;
     }
@@ -222,10 +235,13 @@ static int timezone_decode(ct_timezone* timezone, const uint8_t* src, int src_le
             return FAILURE_AT_POS(size);
         }
         timezone->type = CT_TZ_LATLONG;
-        uint32_t latlong = read_uint32_le(src) >> 1;
-        timezone->latitude = latlong & MASK_LATITUDE;
+        uint32_t latlong = read_uint32_le(src);
+        KSLOG_TRACE("TS Lat/long from %x", latlong);
+        latlong >>= 1;
+        timezone->latitude = sign_extend(latlong & MASK_LATITUDE, SIZE_LATITUDE);
         latlong >>= SIZE_LATITUDE;
-        timezone->longitude = latlong & MASK_LONGITUDE;
+        timezone->longitude = sign_extend(latlong & MASK_LONGITUDE, SIZE_LONGITUDE);
+        KSLOG_TRACE("Decoded to %d/%d", timezone->latitude, timezone->longitude);
         return size;
     }
 
@@ -239,6 +255,7 @@ static int timezone_decode(ct_timezone* timezone, const uint8_t* src, int src_le
     timezone->type = CT_TZ_STRING;
     memcpy(timezone->as_string, src+offset, length);
     timezone->as_string[length] = 0;
+    KSLOG_TRACE("TS String %s", timezone->as_string);
     offset += length;
     return offset;
 }
@@ -384,6 +401,7 @@ int ct_timestamp_encode(const ct_timestamp* timestamp, uint8_t* dst, int dst_len
 
 int ct_date_decode(const uint8_t* src, int src_length, ct_date* date)
 {
+    KSLOG_DATA_DEBUG(src, src_length, "ct_date_decode()");
     if(BYTE_COUNT_DATE >= src_length)
     {
         return FAILURE_AT_POS(BYTE_COUNT_DATE);
@@ -411,6 +429,7 @@ int ct_date_decode(const uint8_t* src, int src_length, ct_date* date)
 
 int ct_time_decode(const uint8_t* src, int src_length, ct_time* time)
 {
+    KSLOG_DATA_DEBUG(src, src_length, "ct_time_decode()");
     if(src_length < 1)
     {
         return FAILURE_AT_POS(1);
@@ -453,8 +472,10 @@ int ct_time_decode(const uint8_t* src, int src_length, ct_time* time)
 
 int ct_timestamp_decode(const uint8_t* src, int src_length, ct_timestamp* timestamp)
 {
+    KSLOG_DATA_DEBUG(src, src_length, "ct_timestamp_decode()");
     if(src_length < 1)
     {
+        KSLOG_DEBUG("Failed because not even 1 byte available");
         return FAILURE_AT_POS(1);
     }
 
@@ -466,6 +487,7 @@ int ct_timestamp_decode(const uint8_t* src, int src_length, ct_timestamp* timest
     int offset = get_base_byte_count(BASE_SIZE_TIMESTAMP, magnitude);
     if(offset >= src_length)
     {
+        KSLOG_DEBUG("Failed decoding base struct");
         return FAILURE_AT_POS(offset);
     }
 
@@ -490,6 +512,7 @@ int ct_timestamp_decode(const uint8_t* src, int src_length, ct_timestamp* timest
     const int decoded_group_count = rvlq_decode_32(&year_encoded, src + offset, src_length - offset);
     if(decoded_group_count < 1)
     {
+        KSLOG_DEBUG("Failed decoding RVLQ");
         return FAILURE_AT_POS(offset) + decoded_group_count;
     }
     offset += decoded_group_count;
@@ -501,9 +524,15 @@ int ct_timestamp_decode(const uint8_t* src, int src_length, ct_timestamp* timest
     int timezone_byte_count = timezone_decode(&timestamp->time.timezone, src + offset, src_length - offset, timezone_is_utc);
     if(timezone_byte_count < 0)
     {
+        KSLOG_DEBUG("Failed decoding timezone");
         return FAILURE_AT_POS(offset) + timezone_byte_count;
     }
     offset += timezone_byte_count;
+
+    KSLOG_TRACE("TS = %d.%02d.%02d-%d:%02d:%02d.%09d, [%s], [%d/%d]",
+        timestamp->date.year, timestamp->date.month, timestamp->date.day,
+        timestamp->time.hour, timestamp->time.minute, timestamp->time.second, timestamp->time.nanosecond,
+        timestamp->time.timezone.as_string, timestamp->time.timezone.latitude, timestamp->time.timezone.longitude);
 
     return offset;
 }
