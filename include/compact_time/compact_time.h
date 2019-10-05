@@ -64,9 +64,9 @@ typedef struct
 
 typedef struct
 {
-    int32_t year;
-    uint8_t month;
-    uint8_t day;
+    int year;
+    int month;
+    int day;
 } ct_date;
 
 typedef struct
@@ -82,10 +82,10 @@ typedef struct
 typedef struct
 {
     ct_timezone timezone;
-    uint32_t nanosecond;
-    uint8_t second;
-    uint8_t minute;
-    uint8_t hour;
+    int nanosecond;
+    int second;
+    int minute;
+    int hour;
 } ct_time;
 
 typedef struct 
