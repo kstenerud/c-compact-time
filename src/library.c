@@ -152,7 +152,7 @@ static int timezone_encoded_size(const ct_timezone* timezone)
     switch(timezone->type)
     {
         case CT_TZ_STRING:
-            return strlen(timezone->data.as_string) + 1;
+            return strlen(timezone->as_string) + 1;
         case CT_TZ_LATLONG:
             return 4;
         case CT_TZ_ZERO:
@@ -171,20 +171,20 @@ static int timezone_encode(const ct_timezone* timezone, uint8_t* dst, int dst_le
             return 0;
         case CT_TZ_STRING:
         {
-            const int string_length = strlen(timezone->data.as_string);
+            const int string_length = strlen(timezone->as_string);
             if(string_length + 1 > dst_length)
             {
                 return FAILURE_AT_POS(string_length + 1);
             }
             dst[0] = string_length << 1;
-            memcpy(dst+1, timezone->data.as_string, string_length);
+            memcpy(dst+1, timezone->as_string, string_length);
             return string_length + 1;
         }
         case CT_TZ_LATLONG:
         {
-            uint32_t value = timezone->data.as_location.longitude & MASK_LONGITUDE;
+            uint32_t value = timezone->longitude & MASK_LONGITUDE;
             value <<= SIZE_LATITUDE;
-            value |= timezone->data.as_location.latitude & MASK_LATITUDE;
+            value |= timezone->latitude & MASK_LATITUDE;
             value <<= 1;
             value |= 1;
             int length = sizeof(value);
@@ -223,9 +223,9 @@ static int timezone_decode(ct_timezone* timezone, const uint8_t* src, int src_le
         }
         timezone->type = CT_TZ_LATLONG;
         uint32_t latlong = read_uint32_le(src) >> 1;
-        timezone->data.as_location.latitude = latlong & MASK_LATITUDE;
+        timezone->latitude = latlong & MASK_LATITUDE;
         latlong >>= SIZE_LATITUDE;
-        timezone->data.as_location.longitude = latlong & MASK_LONGITUDE;
+        timezone->longitude = latlong & MASK_LONGITUDE;
         return size;
     }
 
@@ -237,8 +237,8 @@ static int timezone_decode(ct_timezone* timezone, const uint8_t* src, int src_le
         return FAILURE_AT_POS(offset + length);
     }
     timezone->type = CT_TZ_STRING;
-    memcpy(timezone->data.as_string, src+offset, length);
-    timezone->data.as_string[length] = 0;
+    memcpy(timezone->as_string, src+offset, length);
+    timezone->as_string[length] = 0;
     offset += length;
     return offset;
 }

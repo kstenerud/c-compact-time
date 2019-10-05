@@ -58,34 +58,26 @@ typedef enum
 
 typedef struct
 {
-    int longitude;
-    int latitude;
-} ct_location;
-
-typedef struct
-{
-    int32_t year;
-    uint8_t month;
-    uint8_t day;
+    int32_t year;  // any except 0
+    uint8_t month; // 1-12
+    uint8_t day;   // 1-31
 } ct_date;
 
 typedef struct
 {
-    union
-    {
-        ct_location as_location;
-        char as_string[41]; // Must be null-terminated!
-    } data;
     ct_tz_type type;
+    int16_t latitude;   // Units: hundredths of a degree
+    int16_t longitude;  // Units: hundredths of a degree
+    char as_string[41]; // Must be null-terminated!
 } ct_timezone;
 
 typedef struct
 {
+    uint8_t hour;        // 0-23
+    uint8_t minute;      // 0-59
+    uint8_t second;      // 0-60 (for leap seconds)
+    uint32_t nanosecond; // 0-999999999
     ct_timezone timezone;
-    uint32_t nanosecond;
-    uint8_t second;
-    uint8_t minute;
-    uint8_t hour;
 } ct_time;
 
 typedef struct 

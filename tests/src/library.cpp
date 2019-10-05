@@ -43,14 +43,14 @@ static void fill_timezone_utc(ct_timezone* timezone)
 static void fill_timezone_named(ct_timezone* timezone, const char* name)
 {
     timezone->type = CT_TZ_STRING;
-    strcpy(timezone->data.as_string, name);
+    strcpy(timezone->as_string, name);
 }
 
 static void fill_timezone_loc(ct_timezone* timezone, const int latitude, const int longitude)
 {
     timezone->type = CT_TZ_LATLONG;
-    timezone->data.as_location.latitude = latitude;
-    timezone->data.as_location.longitude = longitude;
+    timezone->latitude = latitude;
+    timezone->longitude = longitude;
 }
 
 #define ASSERT_DATE_EQ(ACTUAL, EXPECTED) \
@@ -126,7 +126,7 @@ TEST(CDate, time_named_ ## HOUR ## _ ## MINUTE ## _ ## SECOND ## _ ## NANOSECOND
     fill_time(&time, HOUR, MINUTE, SECOND, NANOSECOND); \
     fill_timezone_named(&time.timezone, TZ); \
     ASSERT_TIME_ENCODE_DECODE(time, actual_time, __VA_ARGS__); \
-    ASSERT_STREQ(actual_time.timezone.data.as_string, TZ); \
+    ASSERT_STREQ(actual_time.timezone.as_string, TZ); \
 }
 
 #define TEST_TIME_TZ_LOC(HOUR, MINUTE, SECOND, NANOSECOND, LAT, LONG, ...) \
@@ -136,8 +136,8 @@ TEST(CDate, time_loc_ ## HOUR ## _ ## MINUTE ## _ ## SECOND ## _ ## NANOSECOND) 
     fill_time(&time, HOUR, MINUTE, SECOND, NANOSECOND); \
     fill_timezone_loc(&time.timezone, LAT, LONG); \
     ASSERT_TIME_ENCODE_DECODE(time, actual_time, __VA_ARGS__); \
-    ASSERT_EQ(time.timezone.data.as_location.latitude, LAT); \
-    ASSERT_EQ(time.timezone.data.as_location.longitude, LONG); \
+    ASSERT_EQ(time.timezone.latitude, LAT); \
+    ASSERT_EQ(time.timezone.longitude, LONG); \
 }
 
 #define TEST_TIMESTAMP_TZ_UTC(SIGN, YEAR, MONTH, DAY, HOUR, MINUTE, SECOND, NANOSECOND, ...) \
@@ -156,7 +156,7 @@ TEST(CDate, timestamp_named_ ## YEAR ## _ ## MONTH ## _ ## DAY ## _ ## HOUR ## _
     fill_timestamp(&timestamp, SIGN YEAR, MONTH, DAY, HOUR, MINUTE, SECOND, NANOSECOND); \
     fill_timezone_named(&timestamp.time.timezone, TZ); \
     ASSERT_TIMESTAMP_ENCODE_DECODE(timestamp, actual_timestamp, __VA_ARGS__); \
-    ASSERT_STREQ(actual_timestamp.time.timezone.data.as_string, TZ); \
+    ASSERT_STREQ(actual_timestamp.time.timezone.as_string, TZ); \
 }
 
 #define TEST_TIMESTAMP_TZ_LOC(SIGN, YEAR, MONTH, DAY, HOUR, MINUTE, SECOND, NANOSECOND, LAT, LONG, ...) \
@@ -166,8 +166,8 @@ TEST(CDate, timestamp_loc_ ## YEAR ## _ ## MONTH ## _ ## DAY ## _ ## HOUR ## _ #
     fill_timestamp(&timestamp, SIGN YEAR, MONTH, DAY, HOUR, MINUTE, SECOND, NANOSECOND); \
     fill_timezone_loc(&timestamp.time.timezone, LAT, LONG); \
     ASSERT_TIMESTAMP_ENCODE_DECODE(timestamp, actual_timestamp, __VA_ARGS__); \
-    ASSERT_EQ(timestamp.time.timezone.data.as_location.latitude, LAT); \
-    ASSERT_EQ(timestamp.time.timezone.data.as_location.longitude, LONG); \
+    ASSERT_EQ(timestamp.time.timezone.latitude, LAT); \
+    ASSERT_EQ(timestamp.time.timezone.longitude, LONG); \
 }
 
 

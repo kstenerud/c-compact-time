@@ -44,8 +44,8 @@ static void demonstrate_encode_time()
     time.second = 14;
     time.nanosecond = 134000000;
     time.timezone.type = CT_TZ_LATLONG;
-    time.timezone.data.as_location.latitude = 5881;
-    time.timezone.data.as_location.longitude = -12270;
+    time.timezone.latitude = 5881;
+    time.timezone.longitude = -12270;
 
     uint8_t data[20];
     int bytes_encoded = ct_time_encode(&time, data, sizeof(data));
@@ -70,12 +70,12 @@ static void demonstrate_decode_time()
             printf("Etc/UTC\n");
             break;
         case CT_TZ_STRING:
-            printf("%s\n", time.timezone.data.as_string);
+            printf("%s\n", time.timezone.as_string);
             break;
         case CT_TZ_LATLONG:
             printf("%.2f,%.2f\n",
-                ((float)time.timezone.data.as_location.longitude) / 100,
-                ((float)time.timezone.data.as_location.latitude) / 100
+                ((float)time.timezone.longitude) / 100,
+                ((float)time.timezone.latitude) / 100
                 );
             break;
     }
@@ -121,12 +121,12 @@ static void demonstrate_decode_timestamp()
             printf("Etc/UTC\n");
             break;
         case CT_TZ_STRING:
-            printf("%s\n", timestamp.time.timezone.data.as_string);
+            printf("%s\n", timestamp.time.timezone.as_string);
             break;
         case CT_TZ_LATLONG:
             printf("%.2f,%.2f\n",
-                ((float)timestamp.time.timezone.data.as_location.longitude) / 100,
-                ((float)timestamp.time.timezone.data.as_location.latitude) / 100
+                ((float)timestamp.time.timezone.longitude) / 100,
+                ((float)timestamp.time.timezone.latitude) / 100
                 );
             break;
     }
