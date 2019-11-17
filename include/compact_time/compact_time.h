@@ -49,6 +49,11 @@ extern "C" {
 // API
 // ---
 
+enum
+{
+    ERROR_OUT_OF_RANGE = -0x7fffffff
+};
+
 typedef enum
 {
     CT_TZ_ZERO,
@@ -86,6 +91,12 @@ typedef struct
     ct_time time;
 } ct_timestamp;
 
+/* All length based API return values will be one of:
+ *   - A value > 0 representing the number of bytes written.
+ *   - A value <= 0, whose negated value represents the offset where it ran out of room in the buffer.
+ *   - The error code ERROR_OUT_OF_RANGE, meaning that the value to encode/decode was out of the allowed range/length.
+ */
+
 /**
  * Get the current library version as a semantic version (e.g. "1.5.2").
  *
@@ -114,48 +125,42 @@ COMPACT_TIME_PUBLIC int ct_timestamp_encoded_size(const ct_timestamp* timestamp)
 /**
  * Encode a date to a destination buffer.
  *
- * Returns the number of bytes written to encode the object, or 0 if there
- * wasn't enough room.
+ * Returns the number of bytes written to encode the object or an error code.
  */
 COMPACT_TIME_PUBLIC int ct_date_encode(const ct_date* date, uint8_t* dst, int dst_length);
 
 /**
  * Encode a time to a destination buffer.
  *
- * Returns the number of bytes written to encode the object, or 0 if there
- * wasn't enough room.
+ * Returns the number of bytes written to encode the object or an error code.
  */
 COMPACT_TIME_PUBLIC int ct_time_encode(const ct_time* time, uint8_t* dst, int dst_length);
 
 /**
  * Encode a timestamp to a destination buffer.
  *
- * Returns the number of bytes written to encode the object, or 0 if there
- * wasn't enough room.
+ * Returns the number of bytes written to encode the object or an error code.
  */
 COMPACT_TIME_PUBLIC int ct_timestamp_encode(const ct_timestamp* timestamp, uint8_t* dst, int dst_length);
 
 /**
  * Decode a date from a source buffer.
  *
- * Returns the number of bytes read to decode the object, or 0 if there wasn't
- * enough data.
+ * Returns the number of bytes read to decode the object or an error code.
  */
 COMPACT_TIME_PUBLIC int ct_date_decode(const uint8_t* src, int src_length, ct_date* date);
 
 /**
  * Decode a time from a source buffer.
  *
- * Returns the number of bytes read to decode the object, or 0 if there wasn't
- * enough data.
+ * Returns the number of bytes read to decode the object or an error code.
  */
 COMPACT_TIME_PUBLIC int ct_time_decode(const uint8_t* src, int src_length, ct_time* time);
 
 /**
  * Decode a timestamp from a source buffer.
  *
- * Returns the number of bytes read to decode the object, or 0 if there wasn't
- * enough data.
+ * Returns the number of bytes read to decode the object or an error code.
  */
 COMPACT_TIME_PUBLIC int ct_timestamp_decode(const uint8_t* src, int src_length, ct_timestamp* timestamp);
 

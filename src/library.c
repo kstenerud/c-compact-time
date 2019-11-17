@@ -71,6 +71,11 @@ static const unsigned MASK_HOUR      = ((1<<SIZE_HOUR)-1);
 static const unsigned MASK_DAY       = ((1<<SIZE_DAY)-1);
 static const unsigned MASK_MONTH     = ((1<<SIZE_MONTH)-1);
 
+static const unsigned SHIFT_LENGTH = 2;
+
+static const unsigned MASK_LATLONG   = 1;
+static const unsigned SHIFT_LATITUDE = 2;
+static const unsigned SHIFT_LONITUDE = 16;
 static const unsigned MASK_LATITUDE  = ((1<<SIZE_LATITUDE)-1);
 static const unsigned MASK_LONGITUDE = ((1<<SIZE_LONGITUDE)-1);
 
@@ -79,6 +84,11 @@ static const unsigned MASK_DATE_YEAR_UPPER_BITS = (1 << SIZE_DATE_YEAR_UPPER_BIT
 static const uint8_t g_timestamp_year_upper_bits[] = { 4, 2, 0, 6 };
 static const unsigned g_subsec_multipliers[] = { 1, 1000000, 1000, 1 };
 
+static const int MAX_TIMEZONE_LENGTH = 63;
+static const int MIN_LATITUDE = -9000;
+static const int MAX_LATITUDE = 9000;
+static const int MIN_LONGITUDE = -18000;
+static const int MAX_LONGITUDE = 18000;
 
 static int get_subsecond_magnitude(const uint32_t nanoseconds)
 {
@@ -181,22 +191,32 @@ static int timezone_encode(const ct_timezone* timezone, uint8_t* dst, int dst_le
         {
             KSLOG_TRACE("TS String %s", timezone->as_string);
             const int string_length = strlen(timezone->as_string);
+            if(string_length > MAX_TIMEZONE_LENGTH)
+            {
+                return ERROR_OUT_OF_RANGE;
+            }
             if(string_length + 1 > dst_length)
             {
                 return FAILURE_AT_POS(string_length + 1);
             }
-            dst[0] = string_length << 1;
+            dst[0] = string_length << SHIFT_LENGTH;
             memcpy(dst+1, timezone->as_string, string_length);
             return string_length + 1;
         }
         case CT_TZ_LATLONG:
         {
             KSLOG_TRACE("TS Lat/long %d/%d", timezone->latitude, timezone->longitude);
-            uint32_t value = timezone->longitude & MASK_LONGITUDE;
-            value <<= SIZE_LATITUDE;
-            value |= timezone->latitude & MASK_LATITUDE;
-            value <<= 1;
-            value |= 1;
+            if(timezone->latitude < MIN_LATITUDE || timezone->latitude > MAX_LATITUDE)
+            {
+                return ERROR_OUT_OF_RANGE;
+            }
+            if(timezone->longitude < MIN_LONGITUDE || timezone->longitude > MAX_LONGITUDE)
+            {
+                return ERROR_OUT_OF_RANGE;
+            }
+            uint32_t value = MASK_LATLONG |
+                             ((timezone->latitude & MASK_LATITUDE) << SHIFT_LATITUDE) |
+                             ((timezone->longitude & MASK_LONGITUDE) << SHIFT_LONITUDE);
             KSLOG_TRACE("Encoded as int: %x", value);
             int length = sizeof(value);
             if(length > dst_length)
@@ -226,7 +246,7 @@ static int timezone_decode(ct_timezone* timezone, const uint8_t* src, int src_le
         return FAILURE_AT_POS(1);
     }
 
-    bool is_latlong = src[0] & 1;
+    bool is_latlong = src[0] & MASK_LATLONG;
     if(is_latlong)
     {
         int size = sizeof(uint32_t);
@@ -237,17 +257,22 @@ static int timezone_decode(ct_timezone* timezone, const uint8_t* src, int src_le
         timezone->type = CT_TZ_LATLONG;
         uint32_t latlong = read_uint32_le(src);
         KSLOG_TRACE("TS Lat/long from %x", latlong);
-        latlong >>= 1;
-        timezone->latitude = sign_extend(latlong & MASK_LATITUDE, SIZE_LATITUDE);
-        latlong >>= SIZE_LATITUDE;
-        timezone->longitude = sign_extend(latlong & MASK_LONGITUDE, SIZE_LONGITUDE);
+        timezone->latitude = sign_extend((latlong >> SHIFT_LATITUDE) & MASK_LATITUDE, SIZE_LATITUDE);
+        timezone->longitude = sign_extend((latlong >> SHIFT_LONITUDE) & MASK_LONGITUDE, SIZE_LONGITUDE);
+        if(timezone->latitude < MIN_LATITUDE || timezone->latitude > MAX_LATITUDE)
+        {
+            return ERROR_OUT_OF_RANGE;
+        }
+        if(timezone->longitude < MIN_LONGITUDE || timezone->longitude > MAX_LONGITUDE)
+        {
+            return ERROR_OUT_OF_RANGE;
+        }
         KSLOG_TRACE("Decoded to %d/%d", timezone->latitude, timezone->longitude);
         return size;
     }
 
-    int offset = 0;
-    const int length = src[offset] >> 1;
-    offset++;
+    const int length = src[0] >> SHIFT_LENGTH;
+    int offset = 1;
     if(offset + length > src_length)
     {
         return FAILURE_AT_POS(offset + length);

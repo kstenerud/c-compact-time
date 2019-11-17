@@ -50,14 +50,14 @@ static void demonstrate_encode_time()
     time.second = 14;
     time.nanosecond = 134000000;
     time.timezone.type = CT_TZ_LATLONG;
-    time.timezone.data.as_location.latitude = 5881;
-    time.timezone.data.as_location.longitude = -12270;
+    time.timezone.latitude = 5881;
+    time.timezone.longitude = -12270;
 
     uint8_t data[20];
     int bytes_encoded = ct_time_encode(&time, data, sizeof(data));
     print_buffer(data, bytes_encoded);
 
-    // Outputs: 62 9e 63 08 f3 2d 09 28 
+    // Outputs: 62 9e 63 08 e5 5b 12 50 
 }
 
 static void demonstrate_decode_time()
@@ -76,12 +76,12 @@ static void demonstrate_decode_time()
             printf("Etc/UTC\n");
             break;
         case CT_TZ_STRING:
-            printf("%s\n", time.timezone.data.as_string);
+            printf("%s\n", time.timezone.as_string);
             break;
         case CT_TZ_LATLONG:
             printf("%.2f,%.2f\n",
-                ((float)time.timezone.data.as_location.longitude) / 100,
-                ((float)time.timezone.data.as_location.latitude) / 100
+                ((float)time.timezone.longitude) / 100,
+                ((float)time.timezone.latitude) / 100
                 );
             break;
     }
@@ -110,7 +110,7 @@ static void demonstrate_encode_timestamp()
 
 static void demonstrate_decode_timestamp()
 {
-    std::vector<uint8_t> data = {0x78, 0x13, 0x3a, 0x01, 0x78, 0x16, 0x4d, 0x2f, 0x56, 0x61, 0x6e, 0x63, 0x6f, 0x75, 0x76, 0x65, 0x72};
+    std::vector<uint8_t> data = {0x78, 0x13, 0x3a, 0x01, 0x78, 0x2c, 0x4d, 0x2f, 0x56, 0x61, 0x6e, 0x63, 0x6f, 0x75, 0x76, 0x65, 0x72};
     ct_timestamp timestamp;
     ct_timestamp_decode(data.data(), data.size(), &timestamp);
     printf("%04d-%02d-%02d %02d:%02d:%02d.%d ",
@@ -127,12 +127,12 @@ static void demonstrate_decode_timestamp()
             printf("Etc/UTC\n");
             break;
         case CT_TZ_STRING:
-            printf("%s\n", timestamp.time.timezone.data.as_string);
+            printf("%s\n", timestamp.time.timezone.as_string);
             break;
         case CT_TZ_LATLONG:
             printf("%.2f,%.2f\n",
-                ((float)timestamp.time.timezone.data.as_location.longitude) / 100,
-                ((float)timestamp.time.timezone.data.as_location.latitude) / 100
+                ((float)timestamp.time.timezone.longitude) / 100,
+                ((float)timestamp.time.timezone.latitude) / 100
                 );
             break;
     }
