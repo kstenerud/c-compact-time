@@ -51,7 +51,7 @@ static void demonstrate_encode_time()
     int bytes_encoded = ct_time_encode(&time, data, sizeof(data));
     print_buffer(data, bytes_encoded);
 
-    // Outputs: 62 9e 63 08 e5 5b 12 50 
+    // Outputs: 62 9e 63 08 f3 2d 12 d0 
 }
 
 static void demonstrate_decode_time()
@@ -104,7 +104,7 @@ static void demonstrate_encode_timestamp()
 
 static void demonstrate_decode_timestamp()
 {
-    std::vector<uint8_t> data = {0x78, 0x13, 0x3a, 0x01, 0x78, 0x2c, 0x4d, 0x2f, 0x56, 0x61, 0x6e, 0x63, 0x6f, 0x75, 0x76, 0x65, 0x72};
+    std::vector<uint8_t> data = {0x78, 0x13, 0x3a, 0x01, 0x78, 0x16, 0x4d, 0x2f, 0x56, 0x61, 0x6e, 0x63, 0x6f, 0x75, 0x76, 0x65, 0x72};
     ct_timestamp timestamp;
     ct_timestamp_decode(data.data(), data.size(), &timestamp);
     printf("%04d-%02d-%02d %02d:%02d:%02d.%d ",

@@ -53,8 +53,8 @@ static const int BITS_PER_YEAR_GROUP = 7;
 #define SIZE_DAY       5
 #define SIZE_MONTH     4
 
-#define SIZE_LATITUDE  14
-#define SIZE_LONGITUDE 15
+#define SIZE_LATITUDE  15
+#define SIZE_LONGITUDE 16
 
 #define SIZE_DATE_YEAR_UPPER_BITS 7
 
@@ -71,10 +71,10 @@ static const unsigned MASK_HOUR      = ((1<<SIZE_HOUR)-1);
 static const unsigned MASK_DAY       = ((1<<SIZE_DAY)-1);
 static const unsigned MASK_MONTH     = ((1<<SIZE_MONTH)-1);
 
-static const unsigned SHIFT_LENGTH = 2;
+static const unsigned SHIFT_LENGTH = 1;
 
 static const unsigned MASK_LATLONG   = 1;
-static const unsigned SHIFT_LATITUDE = 2;
+static const unsigned SHIFT_LATITUDE = 1;
 static const unsigned SHIFT_LONITUDE = 16;
 static const unsigned MASK_LATITUDE  = ((1<<SIZE_LATITUDE)-1);
 static const unsigned MASK_LONGITUDE = ((1<<SIZE_LONGITUDE)-1);
